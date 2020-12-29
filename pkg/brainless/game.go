@@ -63,8 +63,7 @@ func (g *Game) handleRequest() {
 func (g *Game) solve() {
 	g.getTask()
 	g.Brain.Setup()
-	g.Brain.Step()
-	for !g.Brain.CheckDone() {
+	for i := 0; i < 1000 && !g.Brain.CheckDone(); i++ {
 		g.Brain.Step()
 	}
 	g.response = g.Brain.ToResponse()

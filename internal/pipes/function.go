@@ -2,17 +2,18 @@ package pipes
 
 import (
 	"fmt"
-	"github.com/puzzle-solvers/brainless/pkg/brainless"
 	"net/http"
 	"runtime"
 	"strconv"
+
+	"github.com/puzzle-solvers/brainless/pkg/brainless"
 )
 
 func Solve(w http.ResponseWriter, r *http.Request) {
 	game := brainless.NewGame(w, r, brainless.Config{
-		PuzzleURL: "https://www.puzzle-pipes.com",
-		//FunctionURL: "http://localhost:8080/solve",
-		FunctionURL: "https://australia-southeast1-puzzle-solvers.cloudfunctions.net/pipes",
+		PuzzleURL:   "https://www.puzzle-pipes.com",
+		FunctionURL: "http://localhost:8080/solve",
+		//FunctionURL: "https://australia-southeast1-puzzle-solvers.cloudfunctions.net/pipes",
 		//FunctionURL: "https://australia-southeast1-dylanbutler.cloudfunctions.net/solve-pipes",
 	})
 	brain := &PipeBrain{}
@@ -81,28 +82,61 @@ func (p *PipeBrain) Step() {
 
 			shape := Shape(cell.Val())
 
-			brainless.OrientatorRule(shape, P, func(c brainless.Compass, o brainless.Orientation) {
-				if cell.Neighbour(c.East).IsLocked() && cell.Neighbour(c.East).Faces(c.West) {
-					cell.Rotate(o.GetRotations())
+			brainless.OrientatorRule(shape, P, func(c brainless.Compass, r int) {
+				if cell.Neighbour(c.East).MustFace(c.West) {
+					cell.Rotate(r)
 					cell.Lock()
-					//   1                2         3         4       5                           6                           7                                  8                                     9
-					dump(bin(int(shape)), cell.Row, cell.Col, c.East, cell.Neighbour(c.East).Row, cell.Neighbour(c.East).Col, cell.Neighbour(c.East).IsLocked(), cell.Neighbour(c.East).Faces(c.West), o.GetRotations())
+				}
+
+				if cell.Neighbour(c.North).CantFace(c.South) && cell.Neighbour(c.West).CantFace(c.East) && cell.Neighbour(c.South).CantFace(c.North) {
+					cell.Rotate(r)
+					cell.Lock()
 				}
 			}, ShapeChecker)
 
-			brainless.OrientatorRule(shape, L, func(c brainless.Compass, o brainless.Orientation) {
-
-			}, ShapeChecker)
-
-			brainless.OrientatorRule(shape, I, func(c brainless.Compass, o brainless.Orientation) {
-
-			}, ShapeChecker)
-
-			brainless.OrientatorRule(shape, T, func(c brainless.Compass, o brainless.Orientation) {
-				if cell.Neighbour(c.South).IsLocked() && !cell.Neighbour(c.South).Faces(c.North) {
-					cell.Rotate(o.GetRotations())
+			brainless.OrientatorRule(shape, L, func(c brainless.Compass, r int) {
+				if cell.Neighbour(c.East).MustFace(c.West) && cell.Neighbour(c.North).MustFace(c.South) {
+					cell.Rotate(r)
 					cell.Lock()
-					//dump(bin(int(shape)), cell.Row, cell.Col, c.South, cell.Neighbour(c.South).Row, cell.Neighbour(c.South).Col, cell.Neighbour(c.South).IsLocked(), o.GetRotations())
+				}
+
+				if cell.Neighbour(c.North).MustFace(c.South) && cell.Neighbour(c.West).CantFace(c.East) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+
+				if cell.Neighbour(c.West).CantFace(c.East) && cell.Neighbour(c.South).CantFace(c.North) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+
+				if cell.Neighbour(c.South).CantFace(c.North) && cell.Neighbour(c.East).MustFace(c.West) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+			}, ShapeChecker)
+
+			brainless.OrientatorRule(shape, I, func(c brainless.Compass, r int) {
+				if cell.Neighbour(c.East).MustFace(c.West) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+
+				if cell.Neighbour(c.North).CantFace(c.South) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+			}, ShapeChecker)
+
+			brainless.OrientatorRule(shape, T, func(c brainless.Compass, r int) {
+				if cell.Neighbour(c.East).MustFace(c.West) && cell.Neighbour(c.North).MustFace(c.South) && cell.Neighbour(c.West).MustFace(c.East) {
+					cell.Rotate(r)
+					cell.Lock()
+				}
+
+				if cell.Neighbour(c.South).CantFace(c.North) {
+					cell.Rotate(r)
+					cell.Lock()
 				}
 			}, ShapeChecker)
 		}
@@ -110,7 +144,7 @@ func (p *PipeBrain) Step() {
 }
 
 func (p *PipeBrain) CheckDone() bool {
-	return true
+	return p.Game.IsComplete()
 }
 
 func (p *PipeBrain) GetTask(task [][]int) {
@@ -242,7 +276,7 @@ func (g *Game) Pinned() [][]int {
 func (g *Game) IsComplete() bool {
 	for _, row := range g.Locked {
 		for _, cell := range row {
-			if cell == false {
+			if !cell {
 				return false
 			}
 		}
@@ -284,6 +318,14 @@ func (c *Cell) Lock() {
 
 func (c *Cell) IsLocked() bool {
 	return c.Game.IsLocked(c.Row, c.Col)
+}
+
+func (c *Cell) MustFace(direction brainless.Direction) bool {
+	return c.IsLocked() && c.Faces(direction)
+}
+
+func (c *Cell) CantFace(direction brainless.Direction) bool {
+	return c.IsLocked() && !c.Faces(direction)
 }
 
 func (c *Cell) Val() int {

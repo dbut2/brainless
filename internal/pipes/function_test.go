@@ -1,9 +1,10 @@
 package pipes
 
 import (
+	"testing"
+
 	"github.com/puzzle-solvers/brainless/pkg/brainless"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestShapeChecker(t *testing.T) {

@@ -1,11 +1,14 @@
 package brainless
 
-func OrientatorRule(cell, example Orientator, f func(Compass, Orientation), checker func(Orientator, Orientator) bool) {
+import "fmt"
+
+func OrientatorRule(cell, example Orientator, f func(Compass, int), checker func(Orientator, Orientator) bool) {
 	c := NewCompass()
-	for i := Orientation(0); i < 8; i++ {
+	for i := Orientation(0); i < 8; i += 2 {
 		if checker(cell, example.Orientate(i)) {
-			for j := Orientation(0); j < 8; j++ {
-				f(c.Orientate(i).(Compass), j)
+			fmt.Printf("Cell %v matched %v with %d rotations\n", cell, example, i.GetRotations())
+			for j := Orientation(0); j < 8; j += 2 {
+				f(c.Orientate(i).Orientate(j).(Compass), j.GetRotations())
 			}
 		}
 	}
