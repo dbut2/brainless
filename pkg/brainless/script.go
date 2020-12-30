@@ -5,25 +5,28 @@ import (
 	"text/template"
 )
 
-func getScript(host string) string {
+func getScript(puzzle, host string) string {
 	t, err := template.New("script").Parse(script)
 	if err != nil {
+		panic(err)
 		return ""
 	}
 	buf := &bytes.Buffer{}
 	err = t.Execute(buf, struct {
-		Host string
+		Puzzle string
+		Host   string
 	}{
-		Host: host,
+		Puzzle: puzzle,
+		Host:   host,
 	})
 	if err != nil {
-		return ""
+		panic(err)
 	}
 	script := buf.String()
 	return script
 }
 
-const script = `// copy and run this script
+const script = `// copy and run this script on {{ .Puzzle }}
 
 function solve(solver, stay) {
     document.getElementById('robot').value = 1

@@ -3,6 +3,7 @@ package brainless
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 )
 
 type Game struct {
@@ -30,12 +31,26 @@ func (g *Game) getTask() {
 		g.respondError(err)
 		return
 	}
-
-	var task [][]int
-	err = json.NewDecoder(g.responder.r.Body).Decode(&task)
+	var data [][]interface{}
+	err = json.NewDecoder(g.responder.r.Body).Decode(&data)
 	if err != nil {
 		g.respondError(err)
 		return
+	}
+	task := make([][]int, len(data))
+	for i, row := range data {
+		task[i] = make([]int, len(row))
+		for j, v := range row {
+			switch cell := v.(type) {
+			case float64:
+				task[i][j] = int(cell)
+			case string:
+				task[i][j], err = strconv.Atoi(cell)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
 	}
 	g.Brain.GetTask(task)
 }
@@ -49,7 +64,7 @@ func (g *Game) handleRequest() {
 	case "OPTIONS":
 		g.responder.PreFlight()
 	case "GET":
-		g.responder.RespondJS(getScript(g.config.FunctionURL))
+		g.responder.RespondJS(getScript(g.config.PuzzleURL, g.config.FunctionURL))
 	case "POST":
 		g.solveAndRespond()
 	default:
