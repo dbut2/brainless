@@ -1,6 +1,6 @@
 package brainless
 
-func OrientatorRule(cell, example Orientator, f func(Compass, int), checker func(Orientator, Orientator) bool) {
+func OrientatorRule(cell, example Orientator, f func(Compass, int), checker func(a, b Orientator) bool) {
 	c := NewCompass()
 	for i := Orientation(0); i < 8; i += 2 {
 		if checker(cell, example.Orientate(i)) {
@@ -11,15 +11,12 @@ func OrientatorRule(cell, example Orientator, f func(Compass, int), checker func
 	}
 }
 
-func AddRule(cell interface{}, checker interface{}, f func(Compass)) {
-	o := NewCompass()
-	for i := 1; i < 1<<4; i *= 2 {
+func FlipperRule(flip Flipper, f func(Compass)) {
+	c := NewCompass()
+	for i := Orientation(0); i < 8; i++ {
 		for j := 0; j < 2; j++ {
-			if cell == checker {
-				f(o)
-			}
-			o.Flip(Direction(i))
+			f(c.Orientate(i).(Compass))
+			flip.Flip()
 		}
-		o.Rotate(1)
 	}
 }
